@@ -3,9 +3,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace Compression.CQRS
+namespace Compression.Utils.Task
 {
-    public sealed class TaskExecutor : IDisposable
+    public sealed class MultiThreadTaskExecutor : IDisposable
     {
         private readonly IList<Thread> _threadPool;
 
@@ -19,13 +19,13 @@ namespace Compression.CQRS
 
         private event EventHandler<Thread> _taskFinished;
 
-        public TaskExecutor(int maxTrheadsSize)
+        public MultiThreadTaskExecutor(int maxTrheadsSize)
         {
             _maxThreadsSize = maxTrheadsSize;
             _threadPool = new List<Thread>(maxTrheadsSize);
         }
 
-        ~TaskExecutor()
+        ~MultiThreadTaskExecutor()
         {
             Dispose();
         }
@@ -55,7 +55,7 @@ namespace Compression.CQRS
             {
                 // stopped execution
                 // or all tasks are done
-                if (!_isExecuting || (_actionQueue.Count == 0 && _threadPool.Count == 0))
+                if (!_isExecuting || _actionQueue.Count == 0 && _threadPool.Count == 0)
                     break;
 
                 // thread pool is busy
@@ -71,7 +71,7 @@ namespace Compression.CQRS
                 _taskFinished = (sender, args) => { lock (_lock) _threadPool.Remove(args); };
                 _totalTasks++;
 
-                var thread = new Thread(() => { task(); _taskFinished?.Invoke(this, Thread.CurrentThread); }) { Name = "GZipTask" + _totalTasks, Priority = ThreadPriority.AboveNormal };
+                var thread = new Thread(() => { task(); _taskFinished?.Invoke(this, Thread.CurrentThread); });
                 lock (_lock) _threadPool.Add(thread);
                 thread.Start();
             }

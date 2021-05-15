@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Compression.Utils.Task;
+using System;
 using System.IO;
 using System.IO.Compression;
 using System.Threading;
@@ -16,11 +17,11 @@ namespace Compression.CQRS
 
         private readonly int _maxThreadsSize = Environment.ProcessorCount * 4;
 
-        private static TaskExecutor _threadPool;
+        private static MultiThreadTaskExecutor _threadPool;
 
         public CompressionService()
         {
-            _threadPool = new TaskExecutor(_maxThreadsSize);
+            _threadPool = new MultiThreadTaskExecutor(_maxThreadsSize);
         }
 
         public void Compress(string fileNameToCompress, string archiveFileName)

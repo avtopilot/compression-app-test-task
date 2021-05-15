@@ -9,7 +9,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6D4D8834-16D
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{F0E0DEBC-AD32-40C3-8C21-FAB0D5CAEE13}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compression.CQRS", "src\Compression.CQRS\Compression.CQRS.csproj", "{F5C53FF0-5894-42D0-B786-3BFC73B27C64}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Compression.CQRS", "src\Compression.CQRS\Compression.CQRS.csproj", "{F5C53FF0-5894-42D0-B786-3BFC73B27C64}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compression.Utils", "src\Compression.Utils\Compression.Utils.csproj", "{24D0ACDF-E741-40CA-B309-4109224F20A6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,6 +27,10 @@ Global
 		{F5C53FF0-5894-42D0-B786-3BFC73B27C64}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F5C53FF0-5894-42D0-B786-3BFC73B27C64}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F5C53FF0-5894-42D0-B786-3BFC73B27C64}.Release|Any CPU.Build.0 = Release|Any CPU
+		{24D0ACDF-E741-40CA-B309-4109224F20A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24D0ACDF-E741-40CA-B309-4109224F20A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24D0ACDF-E741-40CA-B309-4109224F20A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24D0ACDF-E741-40CA-B309-4109224F20A6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -32,6 +38,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{1ABA4B07-ED9A-4834-943F-2C50D8EDED7E} = {6D4D8834-16DE-41EF-A737-162CBB29A4D0}
 		{F5C53FF0-5894-42D0-B786-3BFC73B27C64} = {6D4D8834-16DE-41EF-A737-162CBB29A4D0}
+		{24D0ACDF-E741-40CA-B309-4109224F20A6} = {6D4D8834-16DE-41EF-A737-162CBB29A4D0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3AAFDEDE-A95E-4AF3-86B2-FF9079C13152}

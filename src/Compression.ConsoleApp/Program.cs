@@ -2,6 +2,7 @@
 using Compression.ConsoleApp.Dtos;
 using Compression.CQRS;
 using Compression.CQRS.Commands;
+using Compression.Utils.Compression;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -23,33 +24,29 @@ namespace Compression.ConsoleApp
 
             var mapper = InitiateAutoMapper();
 
-            /*var command = ReadCommand(writer);
+            // var command = ReadCommand(writer);
+
+            var command = new InputCommand("compress bigcsv.csv testme");
 
             if (command == null) return 1;
 
             var mediatorCommand = MapInputToCommand(writer, mapper, command);
 
             if (mediatorCommand == null) return 1;
-            */
+
             try
             {
                 var timer = Stopwatch.StartNew();
-                using (var compress = new CompressionService())
-                {
-                    compress.Compress("bigcsv.csv", "tessst");
-                    //compress.StartStream(command.InputFileName, command.OutputFileName);
-                }
+
+                await mediator.Send(mediatorCommand);
+
                 timer.Stop();
-                writer.WriteLine($"File was processed in = {timer.Elapsed.TotalSeconds} s");
-                //new ThreadingPlayground();
-                //await mediator.Send(mediatorCommand);            
+                writer.WriteLine($"File was processed in = {timer.Elapsed.TotalSeconds} s"); 
             }
             catch (Exception e)
             {
                 writer.WriteLine(e.Message);
             }
-
-            //writer.WriteLine($"Command is {command.Command} {command.InputFileName} {command.OutputFileName}");
 
             return 0;
         }

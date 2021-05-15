@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Compression.CQRS\Compression.CQRS.csproj" />
+    <ProjectReference Include="..\Compression.Utils\Compression.Utils.csproj" />
   </ItemGroup>
 
 </Project>
