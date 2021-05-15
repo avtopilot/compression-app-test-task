@@ -14,12 +14,13 @@ namespace Compression.CQRS
 
         private readonly object _lock = new object();
 
+        private readonly int _maxThreadsSize = Environment.ProcessorCount * 4;
+
         private static TaskExecutor _threadPool;
-        private static int _concurrentEntriesSize = Environment.ProcessorCount * 4;
 
         public CompressionService()
         {
-            _threadPool = new TaskExecutor();
+            _threadPool = new TaskExecutor(_maxThreadsSize);
         }
 
         public void Compress(string fileNameToCompress, string archiveFileName)

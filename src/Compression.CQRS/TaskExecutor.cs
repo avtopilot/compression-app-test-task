@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -8,46 +9,42 @@ namespace Compression.CQRS
     {
         private readonly IList<Thread> _threadPool;
 
-        private readonly Queue<Action> _actions = new Queue<Action>();
-
-        private volatile bool _isDisposed;
+        private readonly ConcurrentQueue<Action> _actionQueue = new ConcurrentQueue<Action>();
 
         private volatile bool _isExecuting;
-        private readonly int _maxThreadsCount = Environment.ProcessorCount;
+        private readonly int _maxThreadsSize;
 
         private readonly object _lock = new object();
         private int _totalTasks;
 
-        private event EventHandler<Thread> TaskDone;
+        private event EventHandler<Thread> _taskFinished;
 
-        public TaskExecutor()
+        public TaskExecutor(int maxTrheadsSize)
         {
-            _threadPool = new List<Thread>(_maxThreadsCount);
+            _maxThreadsSize = maxTrheadsSize;
+            _threadPool = new List<Thread>(maxTrheadsSize);
         }
 
         ~TaskExecutor()
         {
-            if (!_isDisposed)
-            {
-                Dispose();
-            }
+            Dispose();
         }
 
         public void Dispose()
         {
             _isExecuting = false;
 
-            _isDisposed = true;
-
-            _actions.Clear();
-
             foreach (var _thread in _threadPool)
+            {
                 _thread.Join();
+            }
+
+            _actionQueue.Clear();
         }
 
         public void AddTask(Action task)
         {
-            _actions.Enqueue(task);
+            _actionQueue.Enqueue(task);
         }
 
         public void Start()
@@ -56,21 +53,25 @@ namespace Compression.CQRS
 
             while (true)
             {
-                if (!_isExecuting || (_actions.Count == 0 && _threadPool.Count == 0)) // Stop execution or all tasks done.
+                // stopped execution
+                // or all tasks are done
+                if (!_isExecuting || (_actionQueue.Count == 0 && _threadPool.Count == 0))
                     break;
 
-                if (_threadPool.Count == _maxThreadsCount) // The whole pool is busy with threads.
+                // thread pool is busy
+                if (_threadPool.Count == _maxThreadsSize)
                     continue;
 
                 Action task;
 
-                if (!_actions.TryDequeue(out task)) // All tasks from the queue are pulled out.
+                // all tasks from the queue are pulled out.
+                if (!_actionQueue.TryDequeue(out task))
                     continue;
 
-                TaskDone = (sender, args) => { lock (_lock) _threadPool.Remove(args); };
+                _taskFinished = (sender, args) => { lock (_lock) _threadPool.Remove(args); };
                 _totalTasks++;
 
-                var thread = new Thread(() => { task(); TaskDone?.Invoke(this, Thread.CurrentThread); }) { Name = "GZipTask" + _totalTasks, Priority = ThreadPriority.AboveNormal };
+                var thread = new Thread(() => { task(); _taskFinished?.Invoke(this, Thread.CurrentThread); }) { Name = "GZipTask" + _totalTasks, Priority = ThreadPriority.AboveNormal };
                 lock (_lock) _threadPool.Add(thread);
                 thread.Start();
             }
