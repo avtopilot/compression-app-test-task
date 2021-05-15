@@ -1,8 +1,9 @@
-﻿using Compression.Utils.Compression;
+﻿using Compression.CQRS.Commands;
+using Compression.Utils.Files;
 using Compression.Utils.Task;
+using MediatR;
 using System;
 using System.IO;
-using System.IO.Compression;
 using System.Threading;
 
 namespace Compression.CQRS
@@ -12,32 +13,45 @@ namespace Compression.CQRS
         private const string _compressionExtension = ".gz";
 
         // chunks of 1Mb size
-        private const int _chunkSize = 1024 * 1024;
+        private const int _chunkSize = 1024 * 526;
 
         private readonly object _lock = new object();
 
         private readonly int _maxThreadsSize = Environment.ProcessorCount * 4;
 
         private static MultiThreadTaskExecutor _threadPool;
+        
+        private readonly IMediator _mediator;
 
-        private readonly ICompressor _compressor;
-
-        public CompressionService(ICompressor compressor)
+        public CompressionService(IMediator mediator)
         {
-            _compressor = compressor;
+            _mediator = mediator;
             _threadPool = new MultiThreadTaskExecutor(_maxThreadsSize);
         }
 
         public void Compress(string fileNameToCompress, string archiveFileName)
         {
-            if (!File.Exists(fileNameToCompress))
-            {
-                throw new FileNotFoundException($"File {fileNameToCompress} is not found");
-            }
-
             var archiveFile = new FileInfo(archiveFileName);
 
             var fileToCompress = new FileInfo(fileNameToCompress);
+
+            ValidateFile(fileToCompress);
+
+            // delete the file if it's already exists
+            if (archiveFile.Exists)
+            {
+                archiveFile.Delete();
+            }
+
+            CompressInChunksFile(fileToCompress, archiveFile);
+        }
+
+        private static void ValidateFile(FileInfo fileToCompress)
+        {
+            if (!fileToCompress.Exists)
+            {
+                throw new FileNotFoundException($"File {fileToCompress.FullName} is not found");
+            }
 
             if ((File.GetAttributes(fileToCompress.FullName) & FileAttributes.Hidden) == FileAttributes.Hidden)
             {
@@ -53,20 +67,6 @@ namespace Compression.CQRS
             {
                 throw new FileLoadException($"File {fileToCompress.FullName} is empty");
             }
-
-            // delete the file if it's already exists
-            if (archiveFile.Exists)
-            {
-                archiveFile.Delete();
-            }
-
-            using (FileStream originalFileStream = fileToCompress.OpenRead())
-            {
-                using (FileStream compressedFileStream = File.Create(archiveFile.FullName + _compressionExtension))
-                {
-                    CompressInChunks(originalFileStream, compressedFileStream);
-                }
-            }
         }
 
         public void Decompress(string archiveFileName, string decompressedFileName)
@@ -74,37 +74,44 @@ namespace Compression.CQRS
             throw new NotImplementedException();
         }
 
-        private void CompressInChunks(Stream source, Stream target)
+        private void CompressInChunksFile(FileInfo source, FileInfo target)
         {
-            var blockAmount = (int)(source.Length / _chunkSize + (source.Length % _chunkSize > 0 ? 1 : 0));
+            var fileLength = source.Length;
 
-            var blockCurrent = 0;
+            var availableBytes = fileLength;
 
-            target.Seek(0, SeekOrigin.Begin);
-            source.Seek(0, SeekOrigin.Begin);
+            var chunkIndex = 0;
+
+            var numberOfBlocks = availableBytes % _chunkSize;
 
             var resetEvent = new AutoResetEvent(false);
 
-            while (source.Position < source.Length)
+            while (availableBytes > 0)
             {
-                var data = new byte[_chunkSize];
-                var dataLength = source.Read(data, 0, _chunkSize);
-                
+                var readCount = availableBytes < _chunkSize
+                    ? (int)availableBytes
+                    : _chunkSize;
+
                 AddToQueue(() =>
                 {
                     lock (_lock)
                     {
-                        var result = _compressor.Compress(data, dataLength);
-                        target.Write(result, 0, result.Length);
+                        _mediator.Send(new ReadChunkCommand(source, chunkIndex, fileLength - availableBytes, readCount));
 
-                        // release if the last block was processed
-                        if (++blockCurrent == blockAmount)
+                        _mediator.Send(new CompressChunkCommand(chunkIndex));
+
+                        int nextBlock = _mediator.Send(new WriteChunkCommand(target, chunkIndex)).Result;
+
+                        if (nextBlock == numberOfBlocks)
                             resetEvent.Set();
                     }
                 });
+
+                availableBytes -= readCount;
+                chunkIndex++;
             }
-            
-            resetEvent.WaitOne();
+
+            //resetEvent.WaitOne();
         }
 
         private void AddToQueue(Action action)
@@ -125,6 +132,7 @@ namespace Compression.CQRS
         public void Dispose()
         {
             _threadPool.Dispose();
+            ConcurrentFileDictionary.Clear();
         }
     }
 }

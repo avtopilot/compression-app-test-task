@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Compression.ConsoleApp.Dtos;
+﻿using Compression.ConsoleApp.Dtos;
 using Compression.CQRS;
 using Compression.CQRS.Commands;
 using Compression.Utils.Compression;
@@ -8,7 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Threading.Tasks;
 
 namespace Compression.ConsoleApp
 {
@@ -17,12 +15,10 @@ namespace Compression.ConsoleApp
         private const string _commandUsageText = "Usage:\n\tfor compressing the file: compress [original file name] [archive file name]" +
                                                 "\n\tfor decompressing the file: decompress [archive file name] [decompressing file name]";
 
-        public static async Task<int> Main()
+        public static int Main()
         {
             var writer = new WrappingWriter(Console.Out);
             var mediator = BuildMediator(writer);
-
-            var mapper = InitiateAutoMapper();
 
             // var command = ReadCommand(writer);
 
@@ -30,15 +26,19 @@ namespace Compression.ConsoleApp
 
             if (command == null) return 1;
 
-            var mediatorCommand = MapInputToCommand(writer, mapper, command);
+            /*var mediatorCommand = MapInputToCommand(writer, mapper, command);
 
-            if (mediatorCommand == null) return 1;
+            if (mediatorCommand == null) return 1;*/
 
             try
             {
                 var timer = Stopwatch.StartNew();
 
-                await mediator.Send(mediatorCommand);
+                using(var compress = new CompressionService(mediator))
+                {
+                    compress.Compress(command.InputFileName, command.OutputFileName);
+                }
+                //await mediator.Send(mediatorCommand);
 
                 timer.Stop();
                 writer.WriteLine($"File was processed in = {timer.Elapsed.TotalSeconds} s"); 
@@ -51,7 +51,7 @@ namespace Compression.ConsoleApp
             return 0;
         }
 
-        private static object MapInputToCommand(IOutputWrapper writer, IMapper mapper, InputCommand command)
+        /*private static object MapInputToCommand(IOutputWrapper writer, IMapper mapper, InputCommand command)
         {
             // TODO: change to dynamic one with dictionary
             switch (command.Command)
@@ -65,7 +65,7 @@ namespace Compression.ConsoleApp
                     return null;
             }
         }
-
+        */
         private static InputCommand ReadCommand(IOutputWrapper writer)
         {
             var inputString = Console.ReadLine();
@@ -87,7 +87,9 @@ namespace Compression.ConsoleApp
 
             services.AddSingleton<TextWriter>(writer);
 
-            services.AddMediatR(typeof(CompressFileCommand));
+            services.AddMediatR(typeof(ReadChunkCommand));
+            services.AddMediatR(typeof(CompressChunkCommand));
+            services.AddMediatR(typeof(WriteChunkCommand));
 
             services.AddScoped(typeof(ICompressionService), typeof(CompressionService));
             services.AddScoped(typeof(ICompressor), typeof(GZipCompressor));
@@ -99,13 +101,6 @@ namespace Compression.ConsoleApp
             var provider = services.BuildServiceProvider();
 
             return provider.GetRequiredService<IMediator>();
-        }
-
-        private static IMapper InitiateAutoMapper()
-        {
-            var configuration = new MapperConfiguration(cfg => cfg.AddProfile(new AutoMapperConfig()));
-
-            return configuration.CreateMapper();
         }
     }
 }
