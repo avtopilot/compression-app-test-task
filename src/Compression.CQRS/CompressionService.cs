@@ -1,4 +1,5 @@
-﻿using Compression.Utils.Task;
+﻿using Compression.Utils.Compression;
+using Compression.Utils.Task;
 using System;
 using System.IO;
 using System.IO.Compression;
@@ -19,8 +20,11 @@ namespace Compression.CQRS
 
         private static MultiThreadTaskExecutor _threadPool;
 
-        public CompressionService()
+        private readonly ICompressor _compressor;
+
+        public CompressionService(ICompressor compressor)
         {
+            _compressor = compressor;
             _threadPool = new MultiThreadTaskExecutor(_maxThreadsSize);
         }
 
@@ -90,20 +94,12 @@ namespace Compression.CQRS
                 {
                     lock (_lock)
                     {
-
-                        using (var result = new MemoryStream())
-                        {
-                            using (var compressionStream = new GZipStream(result, CompressionMode.Compress))
-                            {
-                                compressionStream.Write(data, 0, dataLength);
-                            }
-                            target.Write(result.ToArray(), 0, result.ToArray().Length);
-                        }
+                        var result = _compressor.Compress(data, dataLength);
+                        target.Write(result, 0, result.Length);
 
                         // release if the last block was processed
                         if (++blockCurrent == blockAmount)
                             resetEvent.Set();
-
                     }
                 });
             }

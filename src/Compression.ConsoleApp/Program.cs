@@ -90,6 +90,7 @@ namespace Compression.ConsoleApp
             services.AddMediatR(typeof(CompressFileCommand));
 
             services.AddScoped(typeof(ICompressionService), typeof(CompressionService));
+            services.AddScoped(typeof(ICompressor), typeof(GZipCompressor));
 
 /*            services.AddScoped(typeof(IPipelineBehavior<,>), typeof(GenericPipelineBehavior<,>));
             services.AddScoped(typeof(IRequestPreProcessor<>), typeof(GenericRequestPreProcessor<>));
