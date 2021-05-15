@@ -6,9 +6,9 @@ using System;
 using System.IO;
 using System.Threading;
 
-namespace Compression.CQRS
+namespace Compression.BusinessService.Compression
 {
-    public class CompressionService : ICompressionService
+    public class MultiThreadCompressionService : ICompressionService
     {
         private const string _compressionExtension = ".gz";
 
@@ -20,10 +20,10 @@ namespace Compression.CQRS
         private readonly int _maxThreadsSize = Environment.ProcessorCount * 4;
 
         private static MultiThreadTaskExecutor _threadPool;
-        
+
         private readonly IMediator _mediator;
 
-        public CompressionService(IMediator mediator)
+        public MultiThreadCompressionService(IMediator mediator)
         {
             _mediator = mediator;
             _threadPool = new MultiThreadTaskExecutor(_maxThreadsSize);
@@ -44,6 +44,16 @@ namespace Compression.CQRS
             }
 
             CompressInChunksFile(fileToCompress, archiveFile);
+        }
+        public void Decompress(string archiveFileName, string decompressedFileName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Dispose()
+        {
+            _threadPool.Dispose();
+            ConcurrentFileDictionary.Clear();
         }
 
         private static void ValidateFile(FileInfo fileToCompress)
@@ -69,11 +79,6 @@ namespace Compression.CQRS
             }
         }
 
-        public void Decompress(string archiveFileName, string decompressedFileName)
-        {
-            throw new NotImplementedException();
-        }
-
         private void CompressInChunksFile(FileInfo source, FileInfo target)
         {
             var fileLength = source.Length;
@@ -96,11 +101,12 @@ namespace Compression.CQRS
                 {
                     lock (_lock)
                     {
-                        _mediator.Send(new ReadChunkCommand(source, chunkIndex, fileLength - availableBytes, readCount));
+                        // TODO: refactor as deadlock might occur
+                        _mediator.Send(new ReadChunkCommand(source, chunkIndex, fileLength - availableBytes, readCount)).GetAwaiter().GetResult();
 
-                        _mediator.Send(new CompressChunkCommand(chunkIndex));
+                        _mediator.Send(new CompressChunkCommand(chunkIndex)).GetAwaiter().GetResult();
 
-                        int nextBlock = _mediator.Send(new WriteChunkCommand(target, chunkIndex)).Result;
+                        int nextBlock = _mediator.Send(new WriteChunkCommand(target, chunkIndex)).GetAwaiter().GetResult();
 
                         if (nextBlock == numberOfBlocks)
                             resetEvent.Set();
@@ -116,7 +122,8 @@ namespace Compression.CQRS
 
         private void AddToQueue(Action action)
         {
-            _threadPool.AddTask(() => {
+            _threadPool.AddTask(() =>
+            {
                 try
                 {
                     action();
@@ -127,12 +134,6 @@ namespace Compression.CQRS
                 }
             });
             _threadPool.Start();
-        }
-
-        public void Dispose()
-        {
-            _threadPool.Dispose();
-            ConcurrentFileDictionary.Clear();
         }
     }
 }

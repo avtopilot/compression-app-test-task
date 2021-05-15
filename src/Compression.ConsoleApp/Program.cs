@@ -1,5 +1,5 @@
-﻿using Compression.ConsoleApp.Dtos;
-using Compression.CQRS;
+﻿using Compression.BusinessService.Compression;
+using Compression.ConsoleApp.Dtos;
 using Compression.CQRS.Commands;
 using Compression.Utils.Compression;
 using MediatR;
@@ -22,7 +22,7 @@ namespace Compression.ConsoleApp
 
             // var command = ReadCommand(writer);
 
-            var command = new InputCommand("compress bigcsv.csv testme");
+            var command = new InputCommand("compress bigcsv.csv testme.gz");
 
             if (command == null) return 1;
 
@@ -34,7 +34,7 @@ namespace Compression.ConsoleApp
             {
                 var timer = Stopwatch.StartNew();
 
-                using(var compress = new CompressionService(mediator))
+                using(var compress = new MultiThreadCompressionService(mediator))
                 {
                     compress.Compress(command.InputFileName, command.OutputFileName);
                 }
@@ -91,7 +91,6 @@ namespace Compression.ConsoleApp
             services.AddMediatR(typeof(CompressChunkCommand));
             services.AddMediatR(typeof(WriteChunkCommand));
 
-            services.AddScoped(typeof(ICompressionService), typeof(CompressionService));
             services.AddScoped(typeof(ICompressor), typeof(GZipCompressor));
 
 /*            services.AddScoped(typeof(IPipelineBehavior<,>), typeof(GenericPipelineBehavior<,>));

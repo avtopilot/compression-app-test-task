@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Compression.CQRS
+namespace Compression.BusinessService.Compression
 {
     public interface ICompressionService : IDisposable
     {
