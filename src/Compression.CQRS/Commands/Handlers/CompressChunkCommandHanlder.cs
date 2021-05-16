@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Compression.CQRS.Commands.Handlers
 {
-    class CompressChunkCommandHanlder : IRequestHandler<CompressChunkCommand, Unit>
+    public class CompressChunkCommandHanlder : IRequestHandler<CompressChunkCommand, Unit>
     {
         private readonly ICompressor _compressor;
 

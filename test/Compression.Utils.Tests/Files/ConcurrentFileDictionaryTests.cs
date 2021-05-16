@@ -24,7 +24,7 @@ namespace Compression.Utils.Tests.Files
         [InlineData(1, "Hello World")]
         public void ConcurrentFileDictionary_Should_Add_Chunks(int index, string input)
         {
-            //Arange
+            //Arrange
             var bytes = Encoding.UTF8.GetBytes(input);
 
             //Act
@@ -37,7 +37,7 @@ namespace Compression.Utils.Tests.Files
         [Fact]
         public void ConcurrentFileDictionary_Should_Remove_Chunks()
         {
-            //Arange
+            //Arrange
             var bytes = Encoding.UTF8.GetBytes("Hello world");
             var bytes2 = Encoding.UTF8.GetBytes("Hello world! It's me");
 
@@ -55,7 +55,7 @@ namespace Compression.Utils.Tests.Files
         [InlineData(1, "Hello World")]
         public void ConcurrentFileDictionary_Should_Get_Chunks(int index, string input)
         {
-            //Arange
+            //Arrange
             var bytes = Encoding.UTF8.GetBytes(input);
 
             //Act
@@ -70,7 +70,7 @@ namespace Compression.Utils.Tests.Files
         [InlineData(1, "Test 2", "Hello World")]
         public void ConcurrentFileDictionary_Should_Update_Chunks(int index, string originalInput, string finalInput)
         {
-            //Arange
+            //Arrange
             var originalBytes = Encoding.UTF8.GetBytes(originalInput);
             var finalBytes = Encoding.UTF8.GetBytes(finalInput);
 
