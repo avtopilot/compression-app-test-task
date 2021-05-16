@@ -1,5 +1,4 @@
-﻿using Compression.Utils.Files;
-using MediatR;
+﻿using MediatR;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,7 +14,7 @@ namespace Compression.CQRS.Commands.Handlers
             using (var writer = new BinaryWriter(request.OutputFile.Open(FileMode.OpenOrCreate, FileAccess.Write, FileShare.None)))
             {
                 writer.BaseStream.Seek(0, SeekOrigin.End);
-                byte[] bytes = ConcurrentFileDictionary.Get(request.ChunkIndex);
+                byte[] bytes = request.FileChunks.Get(request.ChunkIndex);
                 writer.Write(bytes);
             }
 

@@ -15,7 +15,6 @@ namespace Compression.Utils.Task
         private readonly int _maxThreadsSize;
 
         private readonly object _lock = new object();
-        private int _totalTasks;
 
         private event EventHandler<Thread> _taskFinished;
 
@@ -69,7 +68,6 @@ namespace Compression.Utils.Task
                     continue;
 
                 _taskFinished = (sender, args) => { lock (_lock) _threadPool.Remove(args); };
-                _totalTasks++;
 
                 var thread = new Thread(() => { task(); _taskFinished?.Invoke(this, Thread.CurrentThread); });
                 lock (_lock) _threadPool.Add(thread);
@@ -77,7 +75,6 @@ namespace Compression.Utils.Task
             }
 
             _isExecuting = false;
-            _totalTasks = 0;
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using Compression.Utils.Compression;
-using Compression.Utils.Files;
 using MediatR;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,8 +16,8 @@ namespace Compression.CQRS.Commands.Handlers
 
         public Task<Unit> Handle(CompressChunkCommand request, CancellationToken cancellationToken)
         {
-            var chunkToCompress = ConcurrentFileDictionary.Get(request.ChunkIndex);
-            ConcurrentFileDictionary.AddOrUpdate(request.ChunkIndex, _compressor.Compress(chunkToCompress));
+            var chunkToCompress = request.FileChunks.Get(request.ChunkIndex);
+            request.FileChunks.AddOrUpdate(request.ChunkIndex, _compressor.Compress(chunkToCompress));
 
             return Task.FromResult(Unit.Value);
         }

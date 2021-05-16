@@ -1,5 +1,4 @@
-﻿using Compression.Utils.Files;
-using MediatR;
+﻿using MediatR;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +13,7 @@ namespace Compression.CQRS.Commands.Handlers
             {
                 reader.BaseStream.Seek(request.StartPosition, SeekOrigin.Begin);
                 var bytes = reader.ReadBytes(request.BytesCount);
-                ConcurrentFileDictionary.AddOrUpdate(request.ChunkIndex, bytes);
+                request.FileChunks.AddOrUpdate(request.ChunkIndex, bytes);
             }
 
             return Task.FromResult(Unit.Value);

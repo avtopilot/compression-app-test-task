@@ -22,7 +22,7 @@ namespace Compression.ConsoleApp
 
             // var command = ReadCommand(writer);
 
-            var command = new InputCommand("compress bigcsv.csv testme.gz");
+            var command = new InputCommand("compress med.pdf testme.gz");
 
             if (command == null) return 1;
 
@@ -38,10 +38,9 @@ namespace Compression.ConsoleApp
                 {
                     compress.Compress(command.InputFileName, command.OutputFileName);
                 }
-                //await mediator.Send(mediatorCommand);
 
                 timer.Stop();
-                writer.WriteLine($"File was processed in = {timer.Elapsed.TotalSeconds} s"); 
+                writer.WriteLine($"File was compressed in = {timer.Elapsed.TotalSeconds} s"); 
             }
             catch (Exception e)
             {
