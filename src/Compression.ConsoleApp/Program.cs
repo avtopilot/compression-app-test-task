@@ -26,13 +26,13 @@ namespace Compression.ConsoleApp
 
             if (command == null) return 1;
 
-            RunCommand(writer, mediator, command);
+            int result = 0;
 
             try
             {
                 var timer = Stopwatch.StartNew();
 
-                RunCommand(writer, mediator, command);
+                result = RunCommand(writer, mediator, command);
 
                 timer.Stop();
                 writer.WriteLine($"File was compressed in = {timer.Elapsed.TotalSeconds} s"); 
@@ -40,6 +40,7 @@ namespace Compression.ConsoleApp
             catch (Exception e)
             {
                 writer.WriteLine(e.Message);
+                result = 1;
             } 
 
             command = new InputCommand("decompress testme.gz med2.pdf");
@@ -48,7 +49,7 @@ namespace Compression.ConsoleApp
             {
                 var timer = Stopwatch.StartNew();
 
-                RunCommand(writer, mediator, command);
+                result = RunCommand(writer, mediator, command);
 
                 timer.Stop();
                 writer.WriteLine($"File was decompressed in = {timer.Elapsed.TotalSeconds} s");
@@ -56,12 +57,13 @@ namespace Compression.ConsoleApp
             catch (Exception e)
             {
                 writer.WriteLine(e.Message);
+                result = 1;
             }
 
-            return 0;
+            return result;
         }
 
-        private static void RunCommand(IOutputWrapper writer, IMediator mediator, InputCommand command)
+        private static int RunCommand(IOutputWrapper writer, IMediator mediator, InputCommand command)
         {
             // TODO: change to dynamic one with dictionary
             switch (command.Command)
@@ -80,8 +82,9 @@ namespace Compression.ConsoleApp
                     break;
                 default:
                     writer.WriteLine("Usupported command: " + command.Command);
-                    break;
+                    return 1;
             }
+            return 0;
         }
         
         private static InputCommand ReadCommand(IOutputWrapper writer)

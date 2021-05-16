@@ -220,7 +220,7 @@ namespace Compression.BusinessService.Compression
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    throw ex;
                 }
             });
         }
