@@ -81,5 +81,18 @@ namespace Compression.Utils.Tests.Files
             //Assert
             Assert.Equal(finalBytes, _dictionary.Get(index));
         }
+
+        [Fact]
+        public void ConcurrentFileDictionary_Should_Throw_Exception_For_Invalid_Index()
+        {
+            //Arrange
+            var originalBytes = Encoding.UTF8.GetBytes("Hello World");
+
+            //Act
+            _dictionary.AddOrUpdate(1, originalBytes);
+
+            //Assert
+            Assert.Throws<ArgumentException>(() => _dictionary.Get(0));
+        }
     }
 }

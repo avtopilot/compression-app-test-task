@@ -20,13 +20,14 @@ namespace Compression.CQRS.Tests.Commands.Handlers
 
             var originalBytes = Encoding.UTF8.GetBytes("Hello World!");
             var compressedBytes = Encoding.UTF8.GetBytes("Hello!");
-            compressor.Setup(x => x.Compress(originalBytes)).Returns(compressedBytes);
 
             var dictionary = new ConcurrentFileDictionary();
             dictionary.AddOrUpdate(0, originalBytes);
 
             var command = new CompressChunkCommand(0, dictionary);
             var handler = new CompressChunkCommandHanlder(compressor.Object);
+
+            compressor.Setup(x => x.Compress(originalBytes)).Returns(compressedBytes);
 
             //Act
             Unit x = await handler.Handle(command, new System.Threading.CancellationToken());
