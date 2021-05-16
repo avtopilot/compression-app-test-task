@@ -27,9 +27,8 @@ namespace Compression.Utils.Files
             }
         }
 
-        public void Clear()
-        {
-            _chunks.Clear();
-        }
+        public void Clear() =>_chunks.Clear();
+
+        public int Length => _chunks.Count;
     }
 }
