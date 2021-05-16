@@ -26,18 +26,13 @@ namespace Compression.ConsoleApp
 
             if (command == null) return 1;
 
-            /*var mediatorCommand = MapInputToCommand(writer, mapper, command);
-
-            if (mediatorCommand == null) return 1;*/
+            RunCommand(writer, mediator, command);
 
             try
             {
                 var timer = Stopwatch.StartNew();
 
-                using(var compress = new MultiThreadCompressionService(mediator))
-                {
-                    compress.Compress(command.InputFileName, command.OutputFileName);
-                }
+                RunCommand(writer, mediator, command);
 
                 timer.Stop();
                 writer.WriteLine($"File was compressed in = {timer.Elapsed.TotalSeconds} s"); 
@@ -47,16 +42,13 @@ namespace Compression.ConsoleApp
                 writer.WriteLine(e.Message);
             } 
 
-            var decompressCommand = new InputCommand("decompress testme.gz med2.pdf");
+            command = new InputCommand("decompress testme.gz med2.pdf");
 
             try
             {
                 var timer = Stopwatch.StartNew();
 
-                using (var compress = new MultiThreadCompressionService(mediator))
-                {
-                    compress.Decompress(decompressCommand.InputFileName, decompressCommand.OutputFileName);
-                }
+                RunCommand(writer, mediator, command);
 
                 timer.Stop();
                 writer.WriteLine($"File was decompressed in = {timer.Elapsed.TotalSeconds} s");
@@ -69,21 +61,29 @@ namespace Compression.ConsoleApp
             return 0;
         }
 
-        /*private static object MapInputToCommand(IOutputWrapper writer, IMapper mapper, InputCommand command)
+        private static void RunCommand(IOutputWrapper writer, IMediator mediator, InputCommand command)
         {
             // TODO: change to dynamic one with dictionary
             switch (command.Command)
             {
                 case "compress":
-                    return mapper.Map<CompressFileCommand>(command);
+                    using (var compress = new MultiThreadCompressionService(mediator))
+                    {
+                        compress.Compress(command.InputFileName, command.OutputFileName);
+                    }
+                    break;
                 case "decompress":
-                    return mapper.Map<DecompressFileCommand>(command);
+                    using (var compress = new MultiThreadCompressionService(mediator))
+                    {
+                        compress.Decompress(command.InputFileName, command.OutputFileName);
+                    }
+                    break;
                 default:
                     writer.WriteLine("Usupported command: " + command.Command);
-                    return null;
+                    break;
             }
         }
-        */
+        
         private static InputCommand ReadCommand(IOutputWrapper writer)
         {
             var inputString = Console.ReadLine();
