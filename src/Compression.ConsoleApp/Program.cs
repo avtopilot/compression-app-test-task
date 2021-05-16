@@ -45,6 +45,25 @@ namespace Compression.ConsoleApp
             catch (Exception e)
             {
                 writer.WriteLine(e.Message);
+            } 
+
+            var decompressCommand = new InputCommand("decompress testme.gz med2.pdf");
+
+            try
+            {
+                var timer = Stopwatch.StartNew();
+
+                using (var compress = new MultiThreadCompressionService(mediator))
+                {
+                    compress.Decompress(decompressCommand.InputFileName, decompressCommand.OutputFileName);
+                }
+
+                timer.Stop();
+                writer.WriteLine($"File was decompressed in = {timer.Elapsed.TotalSeconds} s");
+            }
+            catch (Exception e)
+            {
+                writer.WriteLine(e.Message);
             }
 
             return 0;

@@ -20,7 +20,18 @@ namespace Compression.Utils.Compression
 
         public byte[] Decompress(byte[] data)
         {
-            throw new System.NotImplementedException();
+            using (var output = new MemoryStream())
+            {
+                using (var input = new MemoryStream(data))
+                {
+                    using (var decompressStream = new GZipStream(input, CompressionMode.Decompress))
+                    {
+                        decompressStream.CopyTo(output);
+                    }
+
+                    return output.ToArray();
+                }
+            }
         }
     }
 }
