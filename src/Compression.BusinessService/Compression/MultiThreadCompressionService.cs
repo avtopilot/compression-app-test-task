@@ -1,4 +1,5 @@
 ﻿using Compression.CQRS.Commands;
+using Compression.Utils;
 using Compression.Utils.Files;
 using Compression.Utils.Task;
 using MediatR;
@@ -15,7 +16,6 @@ namespace Compression.BusinessService.Compression
         private const int _chunkSize = 1024 * 1024;
         private readonly object _lock = new object();
         private readonly int _maxThreadsSize = Environment.ProcessorCount * 4;
-        private static readonly byte[] GZipDefaultHeader = { 0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00 };
 
         private static Semaphore _semaphore;
         private static MultiThreadTaskExecutor _threadPool;
@@ -85,6 +85,24 @@ namespace Compression.BusinessService.Compression
             }
         }
 
+        private void AddToQueue(Action action)
+        {
+            _semaphore.WaitOne();
+            _threadPool.AddTask(() =>
+            {
+                try
+                {
+                    action();
+                    _semaphore.Release();
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
+            });
+        }
+
+        #region Compression
         private void CompressInChunksFile(FileInfo source, FileInfo target)
         {
             var fileLength = source.Length;
@@ -125,12 +143,14 @@ namespace Compression.BusinessService.Compression
                 chunkIndex++;
             }
         }
+        #endregion
 
+        #region Decompression
         private void DecompressInChunksFile(FileInfo source, FileInfo target)
         {
             using (var reader = new BinaryReader(source.Open(FileMode.Open, FileAccess.Read)))
             {
-                var gzipHeader = GZipDefaultHeader;
+                var gzipHeader = Constants.GZipDefaultHeader;
 
                 var fileLength = source.Length;
                 var availableBytes = fileLength;
@@ -142,36 +162,36 @@ namespace Compression.BusinessService.Compression
                 {
                     var gzipBlock = new List<byte>(_chunkSize);
 
-                    // gzip header.
+                    // read header
                     if (chunkIndex == 0)
                     {
-                        // get first GZip header from the file. All internal gzip blocks have the same one.
+                        // get first GZip header from the file. All internal gzip blocks have the same one
                         gzipHeader = reader.ReadBytes(gzipHeader.Length);
                         availableBytes -= gzipHeader.Length;
                     }
                     gzipBlock.AddRange(gzipHeader);
 
-                    // read gzipped data.
-                    var gzipHeaderMatchsCount = 0;
+                    // read blocks
+                    var gzipHeaderCount = 0;
                     while (availableBytes > 0)
                     {
-                        var curByte = reader.ReadByte();
-                        gzipBlock.Add(curByte);
+                        var currentByte = reader.ReadByte();
+                        gzipBlock.Add(currentByte);
                         availableBytes--;
 
-                        // check a header of the next gzip block.
-                        if (curByte == gzipHeader[gzipHeaderMatchsCount])
+                        // check a header of the next gzip block
+                        if (currentByte == gzipHeader[gzipHeaderCount])
                         {
-                            gzipHeaderMatchsCount++;
-                            if (gzipHeaderMatchsCount != gzipHeader.Length)
+                            gzipHeaderCount++;
+                            if (gzipHeaderCount != gzipHeader.Length)
                                 continue;
 
-                            // remove gzip header of the next block from a rear of this one.
+                            // remove gzip header of the next block from the current block
                             gzipBlock.RemoveRange(gzipBlock.Count - gzipHeader.Length, gzipHeader.Length);
                             break;
                         }
 
-                        gzipHeaderMatchsCount = 0;
+                        gzipHeaderCount = 0;
                     }
 
                     var gzipBlockStartPosition = 0L;
@@ -189,8 +209,8 @@ namespace Compression.BusinessService.Compression
                     {
                         lock (_lock)
                         {
-                             // TODO: refactor as deadlock might occur
-                             _mediator.Send(new ReadChunkCommand(source, chunkIndex, gzipBlockStartPosition, gzipBlockLength, _fileChunks)).GetAwaiter().GetResult();
+                            // TODO: refactor as deadlock might occur
+                            _mediator.Send(new ReadChunkCommand(source, chunkIndex, gzipBlockStartPosition, gzipBlockLength, _fileChunks)).GetAwaiter().GetResult();
 
                             _mediator.Send(new DecompressFileCommand(chunkIndex, _fileChunks)).GetAwaiter().GetResult();
 
@@ -207,22 +227,6 @@ namespace Compression.BusinessService.Compression
 
             _threadPool.Start();
         }
-
-        private void AddToQueue(Action action)
-        {
-            _semaphore.WaitOne();
-            _threadPool.AddTask(() =>
-            {
-                try
-                {
-                    action();
-                    _semaphore.Release();
-                }
-                catch (Exception ex)
-                {
-                    throw ex;
-                }
-            });
-        }
+        #endregion
     }
 }
