@@ -20,14 +20,11 @@ namespace Compression.ConsoleApp
             var writer = new WrappingWriter(Console.Out);
             var mediator = BuildMediator(writer);
 
-            // var command = ReadCommand(writer);
-
-            var command = new InputCommand("compress med.pdf testme.gz");
+            var command = ReadCommand(writer);
 
             if (command == null) return 1;
 
-            int result = 0;
-
+            int result;
             try
             {
                 var timer = Stopwatch.StartNew();
@@ -35,29 +32,12 @@ namespace Compression.ConsoleApp
                 result = RunCommand(writer, mediator, command);
 
                 timer.Stop();
-                writer.WriteLine($"File was compressed in = {timer.Elapsed.TotalSeconds} s"); 
+                writer.WriteLine($"File was {command.Command.ToLower()}ed in = {timer.Elapsed.TotalSeconds} s"); 
             }
             catch (Exception e)
             {
                 writer.WriteLine(e.Message);
-                result = 1;
-            } 
-
-            command = new InputCommand("decompress testme.gz med2.pdf");
-
-            try
-            {
-                var timer = Stopwatch.StartNew();
-
-                result = RunCommand(writer, mediator, command);
-
-                timer.Stop();
-                writer.WriteLine($"File was decompressed in = {timer.Elapsed.TotalSeconds} s");
-            }
-            catch (Exception e)
-            {
-                writer.WriteLine(e.Message);
-                result = 1;
+                return 0;
             }
 
             return result;
@@ -66,7 +46,7 @@ namespace Compression.ConsoleApp
         private static int RunCommand(IOutputWrapper writer, IMediator mediator, InputCommand command)
         {
             // TODO: change to dynamic one with dictionary
-            switch (command.Command)
+            switch (command.Command.ToLower())
             {
                 case "compress":
                     using (var compress = new MultiThreadCompressionService(mediator))
