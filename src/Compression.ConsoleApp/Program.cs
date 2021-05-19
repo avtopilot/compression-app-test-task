@@ -15,12 +15,12 @@ namespace Compression.ConsoleApp
         private const string _commandUsageText = "Usage:\n\tfor compressing the file: compress [original file name] [archive file name]" +
                                                 "\n\tfor decompressing the file: decompress [archive file name] [decompressing file name]";
 
-        public static int Main()
+        public static int Main(string[] args)
         {
             var writer = new WrappingWriter(Console.Out);
             var mediator = BuildMediator(writer);
 
-            var command = ReadCommand(writer);
+            var command = ReadCommand(args, writer);
 
             if (command == null) return 1;
 
@@ -67,12 +67,11 @@ namespace Compression.ConsoleApp
             return 0;
         }
         
-        private static InputCommand ReadCommand(IOutputWrapper writer)
+        private static InputCommand ReadCommand(string[] args, IOutputWrapper writer)
         {
-            var inputString = Console.ReadLine();
             try
             {
-                return new InputCommand(inputString);
+                return new InputCommand(args);
             }
             catch (IOException e)
             {

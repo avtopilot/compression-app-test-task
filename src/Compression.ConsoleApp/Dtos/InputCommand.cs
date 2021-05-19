@@ -1,19 +1,16 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 
 namespace Compression.ConsoleApp.Dtos
 {
     public class InputCommand
     {
-        public InputCommand(string inputString)
+        public InputCommand(string[] input)
         {
-            var splitString = inputString.Split(" ", StringSplitOptions.RemoveEmptyEntries);
+            if (input.Length != 3) throw new IOException();
 
-            if (splitString.Length != 3) throw new IOException();
-
-            Command = splitString[0];
-            InputFileName = splitString[1];
-            OutputFileName = splitString[2];
+            Command = input[0];
+            InputFileName = input[1];
+            OutputFileName = input[2];
         }
 
         public string Command { get; set; }
